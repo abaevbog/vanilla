@@ -65,22 +65,11 @@ class SearchModel extends Gdn_Model {
 						"filter" => array(
 							"range" => array(
 								"date" => array(
-									"gte" => "now-30d"
+									"gte" => "now-3M"
 								)
 							)
 						),
 						"weight" => 10
-					),
-					array(
-						"filter" => array(
-							"range" => array(
-								"date" => array(
-									"gte" => "now-3M",
-									"lt" => "now-30d"
-								)
-							)
-						),
-						"weight" => 9
 					),
 					array(
 						"filter" => array(
@@ -91,27 +80,29 @@ class SearchModel extends Gdn_Model {
 								)
 							)
 						),
+						"weight" => 8
+					),
+					array(
+						"filter" => array(
+							"range" => array(
+								"date" => array(
+									"gte" => "now-1y",
+									"lt" => "now-3y"
+								)
+							)
+						),
 						"weight" => 7
 					),
 					array(
 						"filter" => array(
 							"range" => array(
 								"date" => array(
-									"lt" => "now-1y"
+									"gte" => "now-3y",
+									"lt" => "now-5y"
 								)
 							)
 						),
 						"weight" => 5
-					),
-					array(
-						"filter" => array(
-							"range" => array(
-								"date" => array(
-									"lt" => "now-3y"
-								)
-							)
-						),
-						"weight" => 2
 					)
 				),
 				"score_mode" => "sum",
@@ -199,7 +190,7 @@ class SearchModel extends Gdn_Model {
 		preg_match_all('/"([^"]+)"/', $Search, $matches);
 
 		// For every phrase, add a "must" condition for body
-		// and a "shoul" condition for discussionTitle
+		// and a "should" condition for discussionTitle
 		for ($i = 0; $i < count($matches[0]); $i++) {
 			$phrase_match = $matches[0][$i];
 			if(!is_null($phrase_match)) {
