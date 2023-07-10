@@ -27,6 +27,98 @@ class SearchModel extends Gdn_Model {
 
     /** @var string Search string. */
     protected $_SearchText = '';
+	// Template for the ES query
+	public $ES_QUERY = array(
+		"size" => 20,
+		"from" => 0,
+		"highlight" => array(
+			"fields" => array(
+				"body" => array(
+					"pre_tags" => array("<strong>"),
+					"post_tags" => array("</strong>"),
+					"number_of_fragments" => 2,
+					"fragment_size" => 100
+				)
+			)
+		),
+		"collapse" => array(
+			"field" => "discussionId"
+		),
+		"query" => array(
+			"function_score" => array(
+				"query" => array(
+					"bool" => array(
+						"should" => array(),
+						"must" => array()
+					)
+				),
+				"functions" => array(
+					array(
+						"filter" => array(
+							"term" => array(
+								"highlighted" => true
+							)
+						),
+						"weight" => 15
+					),
+					array(
+						"filter" => array(
+							"range" => array(
+								"date" => array(
+									"gte" => "now-30d"
+								)
+							)
+						),
+						"weight" => 10
+					),
+					array(
+						"filter" => array(
+							"range" => array(
+								"date" => array(
+									"gte" => "now-3M",
+									"lt" => "now-30d"
+								)
+							)
+						),
+						"weight" => 9
+					),
+					array(
+						"filter" => array(
+							"range" => array(
+								"date" => array(
+									"gte" => "now-1y",
+									"lt" => "now-3M"
+								)
+							)
+						),
+						"weight" => 7
+					),
+					array(
+						"filter" => array(
+							"range" => array(
+								"date" => array(
+									"lt" => "now-1y"
+								)
+							)
+						),
+						"weight" => 5
+					),
+					array(
+						"filter" => array(
+							"range" => array(
+								"date" => array(
+									"lt" => "now-3y"
+								)
+							)
+						),
+						"weight" => 2
+					)
+				),
+				"score_mode" => "sum",
+				"boost_mode" => "sum"
+			)
+		)
+	);
 
     /**
      *
@@ -97,6 +189,66 @@ class SearchModel extends Gdn_Model {
         $this->_SearchSql = '';
     }
 
+
+	public function search($Search, $Offset = 0, $Limit = 20) {
+		// Adjust site and limit for pagination
+		$this->ES_QUERY['size'] = $Limit;
+		$this->ES_QUERY['from'] = $Offset;
+
+		// Fetch all phrases between quotes
+		preg_match_all('/"([^"]+)"/', $Search, $matches);
+
+		// For every phrase, add a "must" condition for body
+		// and a "shoul" condition for discussionTitle
+		for ($i = 0; $i < count($matches[0]); $i++) {
+			$phrase_match = $matches[0][$i];
+			if(!is_null($phrase_match)) {
+				array_push($this->ES_QUERY['query']['function_score']['query']['bool']['must'], array("match_phrase" => array("body" => $phrase_match)));
+				array_push($this->ES_QUERY['query']['function_score']['query']['bool']['should'], array("match" => array("discussionName" => $phrase_match)));
+				// Remove phrase from general keyword search
+				$Search = str_replace($phrase_match, '', $Search);
+			}
+		}
+
+		$Search = trim($Search);
+		
+		// Add "should" conditions for keyword search
+		if($Search != "") {
+			array_push($this->ES_QUERY['query']['function_score']['query']['bool']['should'], array("match" => array("discussionName" => $Search)));
+			array_push($this->ES_QUERY['query']['function_score']['query']['bool']['should'], array("match" => array("body" => $Search)));
+		}
+
+		// REST api call to ES
+		$ch = curl_init("https://search-forums-test-vcbpec6ifhorjose2iofhr5dpe.us-east-1.es.amazonaws.com/forum_index_v7/_search"); 
+		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+		curl_setopt($ch, CURLOPT_HTTPHEADER, array( 'Accept: application/json', 'Content-Type: application/json'));
+		curl_setopt( $ch, CURLOPT_POSTFIELDS, json_encode($this->ES_QUERY) );
+		$data = curl_exec($ch);
+		curl_close($ch);
+
+		$parsed = json_decode($data, true);
+		$result = array();
+		// Format received data in the same way as it was returned by SQL
+		// to avoid changing views
+		foreach ($parsed['hits']['hits'] as $hit) {
+			$formattedEntry = array(
+				//'Relavence' => '',
+				'PrimaryID' => $hit['_source']['id'],
+				'Title' => $hit['_source']['discussionName'],
+				'Summary' => implode("...", $hit['highlight']['body']),
+				'Format' => 'html',
+				//'CategoryID' => '',
+				//'Score' => null,
+				'Url' => $hit['_source']['url'],
+				'DateInserted' => $hit['_source']['date'],
+				'UserID' => $hit['_source']['user'],
+				'RecordType' => 'Comment'
+			);
+			array_push($result,$formattedEntry);
+		}
+		return $result;
+	}
+
     /**
      *
      *
@@ -106,7 +258,8 @@ class SearchModel extends Gdn_Model {
      * @return array|null
      * @throws Exception
      */
-    public function search($Search, $Offset = 0, $Limit = 20) {
+    public function search_old($Search, $Offset = 0, $Limit = 20) {
+		echo "Search model";
         // If there are no searches then return an empty array.
         if (trim($Search) == '') {
             return array();
@@ -187,6 +340,7 @@ class SearchModel extends Gdn_Model {
             }
         }
 
+		
         return $Result;
     }
 
