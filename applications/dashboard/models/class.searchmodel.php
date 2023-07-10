@@ -7,7 +7,7 @@
  * @package Dashboard
  * @since 2.0
  */
-
+use Elasticsearch\ClientBuilder;
 /**
  * Handles search data.
  */
@@ -182,63 +182,58 @@ class SearchModel extends Gdn_Model {
 
 
 	public function search($Search, $Offset = 0, $Limit = 20) {
-		// Adjust site and limit for pagination
-		$this->ES_QUERY['size'] = $Limit;
-		$this->ES_QUERY['from'] = $Offset;
+        $builder = ClientBuilder::create();
+        $builder->setHosts(['https://search-forums-test-vcbpec6ifhorjose2iofhr5dpe.us-east-1.es.amazonaws.com:443']);
+        $client = $builder->build();
+        // Adjust site and limit for pagination
+        $this->ES_QUERY['size'] = $Limit;
+        $this->ES_QUERY['from'] = $Offset;
 
-		// Fetch all phrases between quotes
-		preg_match_all('/"([^"]+)"/', $Search, $matches);
+        // Fetch all phrases between quotes
+        preg_match_all('/"([^"]+)"/', $Search, $matches);
 
-		// For every phrase, add a "must" condition for body
-		// and a "should" condition for discussionTitle
-		for ($i = 0; $i < count($matches[0]); $i++) {
-			$phrase_match = $matches[0][$i];
-			if(!is_null($phrase_match)) {
-				array_push($this->ES_QUERY['query']['function_score']['query']['bool']['must'], array("match_phrase" => array("body" => $phrase_match)));
-				array_push($this->ES_QUERY['query']['function_score']['query']['bool']['should'], array("match" => array("discussionName" => $phrase_match)));
-				// Remove phrase from general keyword search
-				$Search = str_replace($phrase_match, '', $Search);
-			}
-		}
+        // For every phrase, add a "must" condition for body
+        // and a "should" condition for discussionTitle
+        for ($i = 0; $i < count($matches[0]); $i++) {
+            $phrase_match = $matches[0][$i];
+            if(!is_null($phrase_match)) {
+                array_push($this->ES_QUERY['query']['function_score']['query']['bool']['must'], array("match_phrase" => array("body" => $phrase_match)));
+                array_push($this->ES_QUERY['query']['function_score']['query']['bool']['should'], array("match" => array("discussionName" => $phrase_match)));
+                // Remove phrase from general keyword search
+                $Search = str_replace($phrase_match, '', $Search);
+            }
+        }
 
-		$Search = trim($Search);
-		
-		// Add "should" conditions for keyword search
-		if($Search != "") {
-			array_push($this->ES_QUERY['query']['function_score']['query']['bool']['should'], array("match" => array("discussionName" => $Search)));
-			array_push($this->ES_QUERY['query']['function_score']['query']['bool']['should'], array("match" => array("body" => $Search)));
-		}
+        $Search = trim($Search);
+        
+        // Add "should" conditions for keyword search
+        if($Search != "") {
+            array_push($this->ES_QUERY['query']['function_score']['query']['bool']['should'], array("match" => array("discussionName" => $Search)));
+            array_push($this->ES_QUERY['query']['function_score']['query']['bool']['should'], array("match" => array("body" => $Search)));
+        }
 
-		// REST api call to ES
-		$ch = curl_init("https://search-forums-test-vcbpec6ifhorjose2iofhr5dpe.us-east-1.es.amazonaws.com/forum_index_v7/_search"); 
-		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-		curl_setopt($ch, CURLOPT_HTTPHEADER, array( 'Accept: application/json', 'Content-Type: application/json'));
-		curl_setopt( $ch, CURLOPT_POSTFIELDS, json_encode($this->ES_QUERY) );
-		$data = curl_exec($ch);
-		curl_close($ch);
-
-		$parsed = json_decode($data, true);
-		$result = array();
-		// Format received data in the same way as it was returned by SQL
-		// to avoid changing views
-		foreach ($parsed['hits']['hits'] as $hit) {
-			$formattedEntry = array(
-				//'Relavence' => '',
-				'PrimaryID' => $hit['_source']['id'],
-				'Title' => $hit['_source']['discussionName'],
-				'Summary' => implode("...", $hit['highlight']['body']),
-				'Format' => 'html',
-				//'CategoryID' => '',
-				//'Score' => null,
-				'Url' => $hit['_source']['url'],
-				'DateInserted' => $hit['_source']['date'],
-				'UserID' => $hit['_source']['user'],
-				'RecordType' => 'Comment'
-			);
-			array_push($result,$formattedEntry);
-		}
-		return $result;
-	}
+        $data = $client->search(['index' => 'forum_index_v7', 'body' => $this->ES_QUERY]);
+        $result = array();
+        // Format received data in the same way as it was returned by SQL
+        // to avoid changing views
+        foreach ($data['hits']['hits'] as $hit) {
+            $formattedEntry = array(
+                //'Relavence' => '',
+                'PrimaryID' => $hit['_source']['id'],
+                'Title' => $hit['_source']['discussionName'],
+                'Summary' => implode("...", $hit['highlight']['body']),
+                'Format' => 'html',
+                //'CategoryID' => '',
+                //'Score' => null,
+                'Url' => $hit['_source']['url'],
+                'DateInserted' => $hit['_source']['date'],
+                'UserID' => $hit['_source']['user'],
+                'RecordType' => 'Comment'
+            );
+            array_push($result,$formattedEntry);
+        }
+        return $result;
+    }
 
     /**
      *
