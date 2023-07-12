@@ -56,7 +56,7 @@ class SearchModel extends Gdn_Model {
 					array(
 						"filter" => array(
 							"term" => array(
-								"highlighted" => true
+								"endorsed" => true
 							)
 						),
 						"weight" => 15

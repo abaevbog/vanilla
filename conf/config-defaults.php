@@ -176,3 +176,6 @@ $Configuration['Routes']['DefaultForumRoot'] = 'discussions';
 $Configuration['Routes']['Default404'] = ['dashboard/home/filenotfound', 'NotFound'];
 $Configuration['Routes']['DefaultPermission'] = ['dashboard/home/unauthorized', 'NotAuthorized'];
 $Configuration['Routes']['UpdateMode'] = 'dashboard/home/updatemode';
+
+$Configuration['ES_HOST'] = [];
+$Configuration['ES_INDEX'] = "";
