@@ -52,7 +52,8 @@
         "vanilla/nbbc": "~2.1",
         "vanilla/safecurl": "~0.9",
         "vanilla/vanilla-connect": "~0.0",
-        "twig/twig": "^2.5"
+        "twig/twig": "^2.5",
+        "elasticsearch/elasticsearch": "^7.11"
     },
     "require-dev": {
         "exussum12/coverage-checker": "~0.10",

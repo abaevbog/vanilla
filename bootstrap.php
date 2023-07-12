@@ -14,7 +14,7 @@ use Vanilla\Utility\ContainerUtils;
 use \Vanilla\Formatting\Formats;
 use Firebase\JWT\JWT;
 use Vanilla\Web\TwigEnhancer;
-
+require 'vendor/autoload.php';
 if (!defined('APPLICATION')) exit();
 /**
  * Bootstrap.
