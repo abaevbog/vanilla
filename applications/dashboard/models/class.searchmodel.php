@@ -220,21 +220,18 @@ class SearchModel extends Gdn_Model {
 			// Generate a discussion link if it was the first comment
 			// or a comment link otherwise
 			$record_id = $hit['_source']['id'];
-			if (strpos($record_id, "INIT_") !== false) {
-				$url = "https://forums.zotero.org/discussion/" . str_replace("INIT_", "", $record_id);
+			if (strpos($record_id, "D_") !== false) {
+				$url = "https://forums.zotero.org/discussion/" . str_replace("D_", "", $record_id);
 			}
 			else {
 				$url = "https://forums.zotero.org/discussion/comment/$record_id/#Comment_$record_id";
 			}
             $formattedEntry = array(
-                'PrimaryID' => $hit['_source']['id'],
                 'Title' => $hit['_source']['discussionName'],
                 'Summary' => implode("...", $hit['highlight']['body']),
-                'Format' => 'html',
                 'Url' => $url,
                 'DateInserted' => $hit['_source']['date'],
-                'UserID' => $hit['_source']['user'],
-                'RecordType' => 'Comment'
+                'UserID' => $hit['_source']['user']
             );
             array_push($result,$formattedEntry);
         }
