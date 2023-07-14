@@ -56,7 +56,7 @@ class SearchModel extends Gdn_Model {
 					array(
 						"filter" => array(
 							"term" => array(
-								"highlighted" => true
+								"endorsed" => true
 							)
 						),
 						"weight" => 15
@@ -230,11 +230,10 @@ class SearchModel extends Gdn_Model {
                 'PrimaryID' => $hit['_source']['id'],
                 'Title' => $hit['_source']['discussionName'],
                 'Summary' => implode("...", $hit['highlight']['body']),
-                'Format' => 'html',
                 'Url' => $url,
                 'DateInserted' => $hit['_source']['date'],
                 'UserID' => $hit['_source']['user'],
-                'RecordType' => 'Comment'
+                'Endorsed' => $hit['_source']['endorsed']
             );
             array_push($result,$formattedEntry);
         }

@@ -5,7 +5,7 @@
 ?>
     <ol id="search-results" class="DataList DataList-Search" start="<?php echo $this->data('From'); ?>">
         <?php foreach ($this->data('SearchResults') as $Row): ?>
-            <li class="Item Item-Search">
+            <li class="<?php echo "Item Item-Search" . ($Row["Endorsed"] ? " Endorsed" : "") ?>" >
                 <h3><?php echo anchor(htmlspecialchars($Row['Title']), $Row['Url']); ?></h3>
 
                 <div class="Item-Body Media">

@@ -881,6 +881,18 @@ class CommentModel extends VanillaModel {
         return $CommentID;
     }
 
+	public function endorse($CommentID) {
+		$data = $this->getID($CommentID);
+        $this->CommentQuery(false);
+		$this->SQL
+			->set('Endorsed', !$data->Endorsed)
+			->where('CommentID', $CommentID)
+			->put();
+		$comment = $this->getID($CommentID);
+		var_dump($comment);
+        return $comment->Endorsed;
+    }
+
     /**
      * Insert or update meta data about the comment.
      *
