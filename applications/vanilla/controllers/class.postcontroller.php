@@ -838,6 +838,22 @@ class PostController extends VanillaController {
         $this->Comment($this->Comment->DiscussionID);
     }
 
+	public function endorsecomment($CommentID) {
+		if ($_SERVER["REQUEST_METHOD"] != "POST") {
+			throw forbiddenException('anything but POST');
+		}
+		$Session = Gdn::session();
+		$UserModel = new UserModel();
+		$user = $UserModel->getID($Session->UserID);
+		if ($user->Admin != 1) {
+			throw permissionException('Admin');
+		}
+		$Comment = new CommentModel();
+		$isEndorsed = $Comment->endorse($CommentID);
+		$result = array('endorsed' => $isEndorsed);
+		$this->RenderData($result);
+    }
+
     /**
      * Include CSS for all methods.
      *

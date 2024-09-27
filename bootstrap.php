@@ -18,7 +18,7 @@
 if (file_exists(PATH_ROOT.'/conf/bootstrap.before.php')) {
     require_once(PATH_ROOT.'/conf/bootstrap.before.php');
 }
-
+require 'vendor/autoload.php';
 /**
  * Define Core Constants
  *

@@ -3038,6 +3038,9 @@ div.Popup form ul li label.RadioLabel {
 .BeforeCommentHeading {
     float: right;
 }
+.Endorsed {
+	background-color: yellow;
+}
 
 /* ======================================= Category & Discussions Table Views */
 .DataTable {

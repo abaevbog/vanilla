@@ -269,7 +269,38 @@ jQuery(document).ready(function($) {
 
 
     /* Options */
-
+    // Endorse comment
+    $(document).on('click', 'a.EndorseComment', function() {
+        var btn = this;
+        var container = $(btn).closest('.ItemComment');
+        var parent = $(container).find('div.Comment');
+        $(parent).find('div.Meta span:last').after('<span class="TinyProgress">&#160;</span>');
+        
+		$.ajax({
+			type: "POST",
+			url: $(btn).attr('href'),
+			data: '',
+			dataType: 'json',
+			error: function(xhr) {
+				gdn.informError(xhr);
+			},
+			success: function(json) {
+				json = $.postParseJson(json);
+				if (json.endorsed) {
+					$(container).addClass('Endorsed');
+				}
+				else {
+					$(container).removeClass('Endorsed');
+				}
+			},
+			complete: function() {
+				$(parent).find('span.TinyProgress').remove();
+				$(btn).closest('.Flyout').hide().closest('.ToggleFlyout').removeClass('Open');
+			}
+		});
+        
+        return false;
+    });
     // Edit comment
     $(document).on('click', 'a.EditComment', function() {
         var btn = this;

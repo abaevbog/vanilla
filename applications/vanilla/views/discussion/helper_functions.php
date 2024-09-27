@@ -85,7 +85,7 @@ if (!function_exists('WriteComment')):
 
         // First comment template event
         $Sender->fireEvent('BeforeCommentDisplay'); ?>
-        <li class="<?php echo $CssClass; ?>" id="<?php echo 'Comment_'.$Comment->CommentID; ?>">
+        <li class="<?php echo $CssClass . ($Comment->Endorsed ? " Endorsed" :"" ); ?>" id="<?php echo 'Comment_'.$Comment->CommentID; ?>">
             <div class="Comment">
 
                 <?php
@@ -310,6 +310,12 @@ if (!function_exists('GetCommentOptions')):
             $TimeLeft = strtotime($Comment->DateInserted) + $EditContentTimeout - time();
             $TimeLeft = $TimeLeft > 0 ? ' ('.Gdn_Format::Seconds($TimeLeft).')' : '';
         }
+
+		$UserModel = new UserModel();
+		$user = $UserModel->getID($Session->UserID);
+		if ($user->Admin == 1) {
+			$Options['EndorseComment'] = array('Label' => t("Change endorsement"), 'Url' => '/post/endorsecomment/'.$Comment->CommentID, 'Class' => 'EndorseComment');
+		}
 
         // Can the user edit the comment?
         if (($CanEdit && $Session->UserID == $Comment->InsertUserID) || $Session->checkPermission('Vanilla.Comments.Edit', TRUE, 'Category', $PermissionCategoryID))
